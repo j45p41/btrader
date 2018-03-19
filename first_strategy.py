@@ -59,7 +59,7 @@ if __name__ == '__main__':
     exchange_out = str(exchange)
     start_date = str('2018-3-10 00:00:00')
     end_date = str('2018-3-16 19:00:00')
-    get_data = False
+    get_data = True
 
     # Get our Exchange
     exchange = getattr(ccxt, exchange)()
