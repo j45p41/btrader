@@ -21,7 +21,6 @@ class dataFeed(btfeed.GenericCSVData):
         ('openinterest', -1)
     )
 
-
 # MAIN STRATEGY DEFINITION
 class firstStrategy(bt.Strategy):
     params = (

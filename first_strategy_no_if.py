@@ -50,7 +50,7 @@ startcash = 10000
 cerebro = bt.Cerebro(optreturn=False)
 
 # ADD STRATEGY
-cerebro.optstrategy(firstStrategy, period=range(14, 15), rsi_low=range(31, 32), rsi_high=range(71, 72))
+cerebro.optstrategy(firstStrategy, period=range(11, 15), rsi_low=range(21, 32), rsi_high=range(61, 72))
 
 # DATA FEED FROM EXCHANGE
 symbol = str('ETH/USDT')
