@@ -1,7 +1,7 @@
 import datetime
+import time
 import os.path
 import sys
-
 import backtrader as bt
 import backtrader.feeds as btfeed
 import ccxt
@@ -48,8 +48,11 @@ if __name__ == '__main__':
     # Create an instance of cerebro
     cerebro = bt.Cerebro(optreturn=False)
 
+    # Timing the whole operation
+    time_at_start = time.time()
+
     # ADD STRATEGY
-    cerebro.optstrategy(firstStrategy, period=range(10, 16), rsi_low=range(25, 35), rsi_high=range(55, 75))
+    cerebro.optstrategy(firstStrategy, period=range(10, 15), rsi_low=range(15, 35), rsi_high=range(60, 70))
 
     # DATA FEED FROM EXCHANGE
     symbol = str('ETH/USDT')
@@ -58,7 +61,7 @@ if __name__ == '__main__':
     exchange_out = str(exchange)
     start_date = str('2018-3-10 00:00:00')
     end_date = str('2018-3-16 19:00:00')
-    get_data = True
+    get_data = False
 
     # Get our Exchange
     exchange = getattr(ccxt, exchange)()
@@ -104,6 +107,11 @@ if __name__ == '__main__':
     cerebro.broker.setcash(startcash)
 
     # RUN STRATEGY THROUGH CEREBRO USING INPUT DATA
+    # Timing the operation
+    time_at_end = time.time()
+    time_elapsed = time_at_end - time_at_start
+    print('Time elapsed: {} seconds'.format(time_elapsed))
+    print ('Running Cerebro')
     opt_runs = cerebro.run()
 
     # CREATE A LIST VARIABLE THAT CONTAINS RESULTS
@@ -121,10 +129,17 @@ if __name__ == '__main__':
     by_period = sorted(final_results_list, key=lambda x: x[0])
     by_PnL = sorted(final_results_list, key=lambda x: x[3], reverse=True)
 
-    # Print results
-
+    # PRINT RESULTS
+    result_number = 0
     print('Results: Ordered by Profit:')
     for result in by_PnL:
-        print('Period: {}, rsi_low: {}, rsi_high: {}, PnL: {}'.format(result[0], result[1], result[2], result[3]))
+        if result_number < 3:
+            print('Period: {}, rsi_low: {}, rsi_high: {}, PnL: {}'.format(result[0], result[1], result[2], result[3]))
+            result_number = result_number + 1
 
+    # Timing the operation
+    time_at_end = time.time()
+    time_elapsed = time_at_end - time_at_start
+
+    print('Time elapsed: {} seconds'.format(time_elapsed))
     # cerebro.plot(style='candlestick')
