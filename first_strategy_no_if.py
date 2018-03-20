@@ -4,8 +4,7 @@ import sys
 
 import backtrader as bt
 import backtrader.feeds as btfeed
-import ccxt
-import pandas as pd
+
 
 
 # CSV INPUT FILE FORMAT CONFIGURATION
@@ -51,7 +50,7 @@ startcash = 10000
 cerebro = bt.Cerebro(optreturn=False)
 
 # ADD STRATEGY
-cerebro.optstrategy(firstStrategy, period=range(10, 16), rsi_low=range(25, 35), rsi_high=range(55, 75))
+cerebro.optstrategy(firstStrategy, period=range(14, 15), rsi_low=range(31, 32), rsi_high=range(71, 72))
 
 # DATA FEED FROM EXCHANGE
 symbol = str('ETH/USDT')
@@ -60,39 +59,13 @@ exchange = str('poloniex')
 exchange_out = str(exchange)
 start_date = str('2018-3-10 00:00:00')
 end_date = str('2018-3-16 19:00:00')
-get_data = True
 
-# Get our Exchange
-exchange = getattr(ccxt, exchange)()
-exchange.load_markets()
-
-
-def to_unix_time(timestamp):
-    epoch = datetime.datetime.utcfromtimestamp(0)  # start of epoch time
-    my_time = datetime.datetime.strptime(timestamp, "%Y-%m-%d %H:%M:%S")  # plugin your time object
-    delta = my_time - epoch
-    return delta.total_seconds() * 1000
 
 
 # CSV File Name
 symbol_out = symbol.replace("/", "")
 filename = '{}-{}-{}.csv'.format(exchange_out, symbol_out, timeframe)
 
-# Get data if needed
-
-if get_data == True:
-    hist_start_date = int(to_unix_time(start_date))
-    hist_end_date = int(to_unix_time(end_date))
-    data = exchange.fetch_ohlcv(symbol, timeframe, since=hist_start_date, limit=hist_end_date)
-    header = ['Timestamp', 'Open', 'High', 'Low', 'Close', 'Volume']
-    df = pd.DataFrame(data, columns=header)
-    df['Timestamp'] = pd.to_datetime(df['Timestamp'], unit='ms')
-
-    # Precision
-    df = df.round(3)
-
-    # Save it
-    df.to_csv(filename, index=False)
 
 # READ DATA FROM CSV FILE
 modpath = os.path.dirname(os.path.abspath(sys.argv[0]))
