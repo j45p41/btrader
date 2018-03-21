@@ -7,6 +7,8 @@ import backtrader.feeds as btfeed
 import ccxt
 import pandas as pd
 
+# DECLARE MODE FOR PROGRAM - OPTOMISATION OR STRATEGY
+opt_mode = True
 
 # CSV INPUT FILE FORMAT CONFIGURATION
 class dataFeed(btfeed.GenericCSVData):
@@ -24,9 +26,9 @@ class dataFeed(btfeed.GenericCSVData):
 # MAIN STRATEGY DEFINITION
 class firstStrategy(bt.Strategy):
     params = (
-        ("period", 21),
-        ("rsi_low", 41),
-        ("rsi_high", 66),
+        ("period", 10),
+        ("rsi_low", 29),
+        ("rsi_high", 60),
     )
 
     def __init__(self):
@@ -51,16 +53,20 @@ if __name__ == '__main__':
     # Timing the whole operation
     time_at_start = time.time()
 
-    # ADD STRATEGY
-    cerebro.optstrategy(firstStrategy, period=range(10, 20), rsi_low=range(10, 20), rsi_high=range(60, 70))
+    if opt_mode == True:
+        # ADD STRATEGY OPTIMISATION
+        cerebro.optstrategy(firstStrategy, period=range(10, 20), rsi_low=range(15, 30), rsi_high=range(60, 85))
+    else:
+        #ADD STRATEGY
+        cerebro.addstrategy(firstStrategy)
 
-    # DATA FEED FROM EXCHANGE
+# DATA FEED FROM EXCHANGE
     symbol = str('ETH/USDT')
     timeframe = str('15m')
     exchange = str('poloniex')
     exchange_out = str(exchange)
     start_date = str('2018-3-10 00:00:00')
-    get_data = True
+    get_data = False
 
     #So, let's say, you are fetching 2 days of 5m timeframe:
     #(1440 minutes in one day * 7 days) / 15 minutes = 576 candles
@@ -117,32 +123,35 @@ if __name__ == '__main__':
     print ('Running Cerebro')
     opt_runs = cerebro.run()
 
-    # CREATE A LIST VARIABLE THAT CONTAINS RESULTS
-    final_results_list = []
-    for run in opt_runs:
-        for strategy in run:
-            value = round(strategy.broker.get_value(), 2)
-            PnL = round(value - startcash, 2)
-            period = strategy.params.period
-            rsi_low = strategy.params.rsi_low
-            rsi_high = strategy.params.rsi_high
-            final_results_list.append([period, rsi_low, rsi_high, PnL])
+    if opt_mode == True:
+        # CREATE A LIST VARIABLE THAT CONTAINS RESULTS
+        final_results_list = []
+        for run in opt_runs:
+            for strategy in run:
+                value = round(strategy.broker.get_value(), 2)
+                PnL = round(value - startcash, 2)
+                period = strategy.params.period
+                rsi_low = strategy.params.rsi_low
+                rsi_high = strategy.params.rsi_high
+                final_results_list.append([period, rsi_low, rsi_high, PnL])
 
-    # Sort Results List
-    by_period = sorted(final_results_list, key=lambda x: x[0])
-    by_PnL = sorted(final_results_list, key=lambda x: x[3], reverse=True)
+        # Sort Results List
+        by_period = sorted(final_results_list, key=lambda x: x[0])
+        by_PnL = sorted(final_results_list, key=lambda x: x[3], reverse=True)
 
-    # PRINT RESULTS
-    result_number = 0
-    print('Results: Ordered by Profit:')
-    for result in by_PnL:
-        if result_number < 3:
-            print('Period: {}, rsi_low: {}, rsi_high: {}, PnL: {}'.format(result[0], result[1], result[2], result[3]))
-            result_number = result_number + 1
+        # PRINT RESULTS IN OPTIMISATION
+
+        result_number = 0
+        print('Results: Ordered by Profit:')
+        for result in by_PnL:
+            if result_number < 3:
+                print('Period: {}, rsi_low: {}, rsi_high: {}, PnL: {}'.format(result[0], result[1], result[2], result[3]))
+                result_number = result_number + 1
 
     # Timing the operation
     time_at_end = time.time()
     time_elapsed = time_at_end - time_at_start
 
+
     print('Time elapsed: {} seconds'.format(time_elapsed))
-    # cerebro.plot(style='candlestick')
+    if opt_mode == False: cerebro.plot(style='candlestick')
