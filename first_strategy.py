@@ -52,7 +52,7 @@ if __name__ == '__main__':
     time_at_start = time.time()
 
     # ADD STRATEGY
-    cerebro.optstrategy(firstStrategy, period=range(10, 15), rsi_low=range(15, 35), rsi_high=range(60, 70))
+    cerebro.optstrategy(firstStrategy, period=range(10, 13), rsi_low=range(15, 18), rsi_high=range(60, 65))
 
     # DATA FEED FROM EXCHANGE
     symbol = str('ETH/USDT')
