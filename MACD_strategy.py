@@ -1,14 +1,13 @@
 import datetime
-import time
 import os.path
 import sys
+
 import backtrader as bt
 import backtrader.feeds as btfeed
 import ccxt
 import pandas as pd
 
 
-# CSV INPUT FILE FORMAT CONFIGURATION
 class dataFeed(btfeed.GenericCSVData):
     params = (
         ('dtformat', '%Y-%m-%d %H:%M:%S'),
@@ -21,7 +20,7 @@ class dataFeed(btfeed.GenericCSVData):
         ('openinterest', -1)
     )
 
-# MAIN STRATEGY DEFINITION
+
 class firstStrategy(bt.Strategy):
     params = (
         ("period", 21),
@@ -41,6 +40,7 @@ class firstStrategy(bt.Strategy):
             if self.rsi > self.params.rsi_high:
                 self.sell(size=10)
 
+
 # INPUT CONDITIONS TO FEED INTO CEREBRO IS ADDED HERE
 if __name__ == '__main__':
     # Variable for our starting cash
@@ -48,13 +48,11 @@ if __name__ == '__main__':
     # Create an instance of cerebro
     cerebro = bt.Cerebro(optreturn=False)
 
-    # Timing the whole operation
-    time_at_start = time.time()
-
     # ADD STRATEGY
-    cerebro.optstrategy(firstStrategy, period=range(10, 15), rsi_low=range(15, 35), rsi_high=range(60, 70))
+    cerebro.optstrategy(firstStrategy, period=range(10, 11), rsi_low=range(33, 34), rsi_high=range(60, 61))
 
     # DATA FEED FROM EXCHANGE
+
     symbol = str('ETH/USDT')
     timeframe = str('15m')
     exchange = str('poloniex')
@@ -74,10 +72,10 @@ if __name__ == '__main__':
         delta = my_time - epoch
         return delta.total_seconds() * 1000
 
+
     # CSV File Name
     symbol_out = symbol.replace("/", "")
     filename = '{}-{}-{}.csv'.format(exchange_out, symbol_out, timeframe)
-
 
     # Get data if needed
 
@@ -89,29 +87,26 @@ if __name__ == '__main__':
         df = pd.DataFrame(data, columns=header)
         df['Timestamp'] = pd.to_datetime(df['Timestamp'], unit='ms')
 
-        #Precision
+        # Precision
         df = df.round(3)
 
         # Save it
-        df.to_csv(filename, index= False)
+        df.to_csv(filename, index=False)
 
-    #READ DATA FROM CSV FILE
+    # READ DATA FROM CSV FILE
     modpath = os.path.dirname(os.path.abspath(sys.argv[0]))
-    datapath = os.path.join(modpath,str(filename))
-    data = dataFeed(dataname=datapath, timeframe=bt.TimeFrame.Minutes, compression=15,)
+    datapath = os.path.join(modpath, str(filename))
+    data = dataFeed(dataname=datapath, timeframe=bt.TimeFrame.Minutes, compression=15, )
 
     # Add the data to Cerebro
     cerebro.adddata(data)
+    cerebro.addobserver(bt.observers.Trades)
+    cerebro.addobserver(bt.observers.BuySell)
 
     # Set our desired cash start
     cerebro.broker.setcash(startcash)
 
     # RUN STRATEGY THROUGH CEREBRO USING INPUT DATA
-    # Timing the operation
-    time_at_end = time.time()
-    time_elapsed = time_at_end - time_at_start
-    print('Time elapsed: {} seconds'.format(time_elapsed))
-    print ('Running Cerebro')
     opt_runs = cerebro.run()
 
     # CREATE A LIST VARIABLE THAT CONTAINS RESULTS
@@ -129,17 +124,10 @@ if __name__ == '__main__':
     by_period = sorted(final_results_list, key=lambda x: x[0])
     by_PnL = sorted(final_results_list, key=lambda x: x[3], reverse=True)
 
-    # PRINT RESULTS
-    result_number = 0
+    # Print results
+
     print('Results: Ordered by Profit:')
     for result in by_PnL:
-        if result_number < 3:
-            print('Period: {}, rsi_low: {}, rsi_high: {}, PnL: {}'.format(result[0], result[1], result[2], result[3]))
-            result_number = result_number + 1
+        print('Period: {}, rsi_low: {}, rsi_high: {}, PnL: {}'.format(result[0], result[1], result[2], result[3]))
 
-    # Timing the operation
-    time_at_end = time.time()
-    time_elapsed = time_at_end - time_at_start
-
-    print('Time elapsed: {} seconds'.format(time_elapsed))
     # cerebro.plot(style='candlestick')
