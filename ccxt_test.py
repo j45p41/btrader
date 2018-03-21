@@ -14,7 +14,7 @@ exchange = getattr (ccxt, exchange) ()
 
 
 # Get data
-data = exchange.fetch_ohlcv(symbol, timeframe,since=1424377800000)
+data = exchange.fetch_ohlcv(symbol, timeframe,since=1424378700000, limit=10)
 header = ['Timestamp', 'Open', 'High', 'Low', 'Close', 'Volume']
 df = pd.DataFrame(data, columns=header).set_index('Timestamp')
 # Save it

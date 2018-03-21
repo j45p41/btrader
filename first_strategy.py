@@ -60,8 +60,12 @@ if __name__ == '__main__':
     exchange = str('poloniex')
     exchange_out = str(exchange)
     start_date = str('2018-3-10 00:00:00')
-    end_date = str('2018-3-16 19:00:00')
-    get_data = False
+    get_data = True
+
+    #So, let's say, you are fetching 2 days of 5m timeframe:
+    #(1440 minutes in one day * 7 days) / 15 minutes = 576 candles
+
+    num_of_candles = 672
 
     # Get our Exchange
     exchange = getattr(ccxt, exchange)()
@@ -83,8 +87,7 @@ if __name__ == '__main__':
 
     if get_data == True:
         hist_start_date = int(to_unix_time(start_date))
-        hist_end_date = int(to_unix_time(end_date))
-        data = exchange.fetch_ohlcv(symbol, timeframe, since=hist_start_date, limit=hist_end_date)
+        data = exchange.fetch_ohlcv(symbol, timeframe, since=hist_start_date, limit=num_of_candles)
         header = ['Timestamp', 'Open', 'High', 'Low', 'Close', 'Volume']
         df = pd.DataFrame(data, columns=header)
         df['Timestamp'] = pd.to_datetime(df['Timestamp'], unit='ms')
