@@ -5,16 +5,16 @@ import math
 import pandas as pd
 
 
-symbol = str('ETH/USD')
+symbol = str('BTC/USDT')
 timeframe = str('15m')
-exchange = str('kraken')
+exchange = str('poloniex')
 exchange_out = str(exchange)
 # Get our Exchange
 exchange = getattr (ccxt, exchange) ()
 
 
 # Get data
-data = exchange.fetch_ohlcv(symbol, timeframe)
+data = exchange.fetch_ohlcv(symbol, timeframe,since=1424377800000)
 header = ['Timestamp', 'Open', 'High', 'Low', 'Close', 'Volume']
 df = pd.DataFrame(data, columns=header).set_index('Timestamp')
 # Save it
