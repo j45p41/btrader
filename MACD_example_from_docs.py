@@ -83,7 +83,7 @@ def parse_args(pargs=None):
         description='Sample for Signal concepts')
 
     parser.add_argument('--data', required=False,
-                        default='../../datas/2005-2006-day-001.txt',
+                        default='./datas/2005-2006-day-001.txt',
                         help='Specific data to be read in')
 
     parser.add_argument('--fromdate', required=False, default=None,
