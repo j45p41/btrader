@@ -6,9 +6,11 @@ import backtrader as bt
 import backtrader.feeds as btfeed
 import ccxt
 import pandas as pd
+from collections import OrderedDict
+
 
 # DECLARE MODE FOR PROGRAM - OPTOMISATION OR STRATEGY
-opt_mode = True
+opt_mode = False
 
 # CSV INPUT FILE FORMAT CONFIGURATION
 class dataFeed(btfeed.GenericCSVData):
@@ -23,7 +25,7 @@ class dataFeed(btfeed.GenericCSVData):
         ('openinterest', -1)
     )
 
-# MAIN STRATEGY DEFINITION
+# MAIN STRATEGY DEFINITION - DEFINE VALUES HERE FOR NON-OPTOMISATION MODE
 class firstStrategy(bt.Strategy):
     params = (
         ("period", 10),
@@ -43,12 +45,51 @@ class firstStrategy(bt.Strategy):
             if self.rsi > self.params.rsi_high:
                 self.sell(size=10)
 
+if opt_mode == False:
+    def printTradeAnalysis(analyzer):
+        '''
+        Function to print the Technical Analysis results in a nice format.
+        '''
+        #Get the results we are interested in
+        total_open = analyzer.total.open
+        total_closed = analyzer.total.closed
+        total_won = analyzer.won.total
+        total_lost = analyzer.lost.total
+        win_streak = analyzer.streak.won.longest
+        lose_streak = analyzer.streak.lost.longest
+        pnl_net = round(analyzer.pnl.net.total,2)
+        strike_rate = (total_won / total_closed) * 100
+        #Designate the rows
+        h1 = ['Total Open', 'Total Closed', 'Total Won', 'Total Lost']
+        h2 = ['Strike Rate','Win Streak', 'Losing Streak', 'PnL Net']
+        r1 = [total_open, total_closed,total_won,total_lost]
+        r2 = [strike_rate, win_streak, lose_streak, pnl_net]
+        #Check which set of headers is the longest.
+        if len(h1) > len(h2):
+            header_length = len(h1)
+        else:
+            header_length = len(h2)
+        #Print the rows
+        print_list = [h1,r1,h2,r2]
+        row_format ="{:<15}" * (header_length + 1)
+        print("Trade Analysis Results:")
+        for row in print_list:
+            print(row_format.format('',*row))
+
+    def printSQN(analyzer):
+        sqn = round(analyzer.sqn,2)
+        print('SQN: {}'.format(sqn))
+
 # INPUT CONDITIONS TO FEED INTO CEREBRO IS ADDED HERE
 if __name__ == '__main__':
     # Variable for our starting cash
     startcash = 10000
     # Create an instance of cerebro
     cerebro = bt.Cerebro(optreturn=False)
+
+    # Add the analyzers we are interested in
+    cerebro.addanalyzer(bt.analyzers.TradeAnalyzer, _name="ta")
+    cerebro.addanalyzer(bt.analyzers.SQN, _name="sqn")
 
     # Timing the whole operation
     time_at_start = time.time()
@@ -115,6 +156,11 @@ if __name__ == '__main__':
     # Set our desired cash start
     cerebro.broker.setcash(startcash)
 
+    if opt_mode == False:
+        # Add the analyzers we are interested in
+        cerebro.addanalyzer(bt.analyzers.TradeAnalyzer, _name="ta")
+        cerebro.addanalyzer(bt.analyzers.SQN, _name="sqn")
+
     # RUN STRATEGY THROUGH CEREBRO USING INPUT DATA
     # Timing the operation
     time_at_end = time.time()
@@ -122,6 +168,8 @@ if __name__ == '__main__':
     print('Time elapsed: {} seconds'.format(time_elapsed))
     print ('Running Cerebro')
     opt_runs = cerebro.run()
+    firstStrat = opt_runs[0]
+
 
     if opt_mode == True:
         # CREATE A LIST VARIABLE THAT CONTAINS RESULTS
@@ -154,4 +202,14 @@ if __name__ == '__main__':
 
 
     print('Time elapsed: {} seconds'.format(time_elapsed))
-    if opt_mode == False: cerebro.plot(style='candlestick')
+    if opt_mode == False:
+        # print the analyzers
+        printTradeAnalysis(firstStrat.analyzers.ta.get_analysis())
+        printSQN(firstStrat.analyzers.sqn.get_analysis())
+
+        #Get final portfolio Value
+        portvalue = cerebro.broker.getvalue()
+
+        #Print out the final result
+        print('Final Portfolio Value: ${}'.format(portvalue))
+        cerebro.plot(style='candlestick')
