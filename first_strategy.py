@@ -15,7 +15,7 @@ opt_mode = False
 # CSV INPUT FILE FORMAT CONFIGURATION
 class dataFeed(btfeed.GenericCSVData):
     params = (
-        ('dtformat', '%Y-%m-%d %H:%M:%S'),
+        ('dtformat', '%Y-%m -%d %H:%M:%S'),
         ('datetime', 0),
         ('open', 1),
         ('high', 2),
@@ -58,7 +58,7 @@ if opt_mode == False:
         win_streak = analyzer.streak.won.longest
         lose_streak = analyzer.streak.lost.longest
         pnl_net = round(analyzer.pnl.net.total,2)
-        strike_rate = (total_won / total_closed) * 100
+        strike_rate = round((total_won / total_closed) * 100,2)
         #Designate the rows
         h1 = ['Total Open', 'Total Closed', 'Total Won', 'Total Lost']
         h2 = ['Strike Rate','Win Streak', 'Losing Streak', 'PnL Net']
@@ -164,7 +164,7 @@ if __name__ == '__main__':
     # RUN STRATEGY THROUGH CEREBRO USING INPUT DATA
     # Timing the operation
     time_at_end = time.time()
-    time_elapsed = time_at_end - time_at_start
+    time_elapsed = round(time_at_end - time_at_start,2)
     print('Time elapsed: {} seconds'.format(time_elapsed))
     print ('Running Cerebro')
     opt_runs = cerebro.run()
@@ -187,8 +187,7 @@ if __name__ == '__main__':
         by_period = sorted(final_results_list, key=lambda x: x[0])
         by_PnL = sorted(final_results_list, key=lambda x: x[3], reverse=True)
 
-        # PRINT RESULTS IN OPTIMISATION
-
+        # PRINT RESULTS IN OPTIMISATION AND FILTER TOP 3
         result_number = 0
         print('Results: Ordered by Profit:')
         for result in by_PnL:
@@ -198,7 +197,7 @@ if __name__ == '__main__':
 
     # Timing the operation
     time_at_end = time.time()
-    time_elapsed = time_at_end - time_at_start
+    time_elapsed = round(time_at_end - time_at_start,2)
 
 
     print('Time elapsed: {} seconds'.format(time_elapsed))
