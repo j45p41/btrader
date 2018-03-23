@@ -10,12 +10,12 @@ from collections import OrderedDict
 
 
 # DECLARE MODE FOR PROGRAM - OPTOMISATION OR STRATEGY
-opt_mode = False
+opt_mode = True
 
 # CSV INPUT FILE FORMAT CONFIGURATION
 class dataFeed(btfeed.GenericCSVData):
     params = (
-        ('dtformat', '%Y-%m -%d %H:%M:%S'),
+        ('dtformat', '%Y-%m-%d %H:%M:%S'),
         ('datetime', 0),
         ('open', 1),
         ('high', 2),
@@ -24,13 +24,40 @@ class dataFeed(btfeed.GenericCSVData):
         ('volume', 5),
         ('openinterest', -1)
     )
+class OrderObserver(bt.observer.Observer):
+    lines = ('created', 'expired',)
+
+    plotinfo = dict(plot=True, subplot=True, plotlinelabels=True)
+
+    plotlines = dict(
+        created=dict(marker='*', markersize=8.0, color='lime', fillstyle='full'),
+        expired=dict(marker='s', markersize=8.0, color='red', fillstyle='full')
+    )
+
+    def next(self):
+        for order in self._owner._orderspending:
+            if order.data is not self.data:
+                continue
+
+            if not order.isbuy():
+                continue
+
+            # Only interested in "buy" orders, because the sell orders
+            # in the strategy are Market orders and will be immediately
+            # executed
+
+            if order.status in [bt.Order.Accepted, bt.Order.Submitted]:
+                self.lines.created[0] = order.created.price
+
+            elif order.status in [bt.Order.Expired]:
+                self.lines.expired[0] = order.created.price
 
 # MAIN STRATEGY DEFINITION - DEFINE VALUES HERE FOR NON-OPTOMISATION MODE
 class firstStrategy(bt.Strategy):
     params = (
-        ("period", 10),
-        ("rsi_low", 29),
-        ("rsi_high", 60),
+        ("period", 14),
+        ("rsi_low", 41),
+        ("rsi_high", 66),
     )
 
     def __init__(self):
@@ -87,16 +114,20 @@ if __name__ == '__main__':
     # Create an instance of cerebro
     cerebro = bt.Cerebro(optreturn=False)
 
+    #ADD OBSERTVERS _ WIP
+    cerebro.addobserver(bt.observers.Trades)
+    #cerebro.addobserver(bt.observers.BuySell)
+
     # Add the analyzers we are interested in
-    cerebro.addanalyzer(bt.analyzers.TradeAnalyzer, _name="ta")
-    cerebro.addanalyzer(bt.analyzers.SQN, _name="sqn")
+    #cerebro.addanalyzer(bt.analyzers.TradeAnalyzer, _name="ta")
+    #cerebro.addanalyzer(bt.analyzers.SQN, _name="sqn")
 
     # Timing the whole operation
     time_at_start = time.time()
 
     if opt_mode == True:
         # ADD STRATEGY OPTIMISATION
-        cerebro.optstrategy(firstStrategy, period=range(10, 20), rsi_low=range(15, 30), rsi_high=range(60, 85))
+        cerebro.optstrategy(firstStrategy, period=range(10, 18), rsi_low=range(36, 46), rsi_high=range(61, 71))
     else:
         #ADD STRATEGY
         cerebro.addstrategy(firstStrategy)
@@ -106,8 +137,8 @@ if __name__ == '__main__':
     timeframe = str('15m')
     exchange = str('poloniex')
     exchange_out = str(exchange)
-    start_date = str('2018-3-10 00:00:00')
-    get_data = False
+    start_date = str('2017-1-1 00:00:00')
+    get_data = True
 
     #So, let's say, you are fetching 2 days of 5m timeframe:
     #(1440 minutes in one day * 7 days) / 15 minutes = 576 candles
@@ -132,9 +163,10 @@ if __name__ == '__main__':
 
     # Get data if needed
 
-    if get_data == True:
+    if get_data == False:
         hist_start_date = int(to_unix_time(start_date))
-        data = exchange.fetch_ohlcv(symbol, timeframe, since=hist_start_date, limit=num_of_candles)
+        #data = exchange.fetch_ohlcv(symbol, timeframe, since=hist_start_date, limit=num_of_candles)
+        data = exchange.fetch_ohlcv(symbol, timeframe, since=hist_start_date)
         header = ['Timestamp', 'Open', 'High', 'Low', 'Close', 'Volume']
         df = pd.DataFrame(data, columns=header)
         df['Timestamp'] = pd.to_datetime(df['Timestamp'], unit='ms')
@@ -148,7 +180,9 @@ if __name__ == '__main__':
     #READ DATA FROM CSV FILE
     modpath = os.path.dirname(os.path.abspath(sys.argv[0]))
     datapath = os.path.join(modpath,str(filename))
-    data = dataFeed(dataname=datapath, timeframe=bt.TimeFrame.Minutes, compression=15,)
+    data = dataFeed(dataname=datapath, timeframe=bt.TimeFrame.Minutes, compression=15,
+                    fromdate=datetime.datetime(2017, 1, 1),
+                    todate=datetime.datetime(2017, 1, 31),)
 
     # Add the data to Cerebro
     cerebro.adddata(data)
@@ -167,7 +201,7 @@ if __name__ == '__main__':
     time_elapsed = round(time_at_end - time_at_start,2)
     print('Time elapsed: {} seconds'.format(time_elapsed))
     print ('Running Cerebro')
-    opt_runs = cerebro.run()
+    opt_runs = cerebro.run(stdstats=True)
     firstStrat = opt_runs[0]
 
 
