@@ -8,6 +8,7 @@
       <debugger id="python">
         <configuration>
           <option name="simplifiedView" value="false" />
+          <option name="watchReturnValues" value="true" />
         </configuration>
       </debugger>
     </debuggers>
