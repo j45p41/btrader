@@ -10,7 +10,7 @@ from collections import OrderedDict
 
 
 # DECLARE MODE FOR PROGRAM - OPTOMISATION OR STRATEGY
-opt_mode = True
+opt_mode = False
 
 # CSV INPUT FILE FORMAT CONFIGURATION
 class dataFeed(btfeed.GenericCSVData):
@@ -55,9 +55,9 @@ class OrderObserver(bt.observer.Observer):
 # MAIN STRATEGY DEFINITION - DEFINE VALUES HERE FOR NON-OPTOMISATION MODE
 class firstStrategy(bt.Strategy):
     params = (
-        ("period", 14),
-        ("rsi_low", 41),
-        ("rsi_high", 66),
+        ("period", 11),
+        ("rsi_low", 45),
+        ("rsi_high", 63),
     )
 
     def __init__(self):
@@ -68,9 +68,11 @@ class firstStrategy(bt.Strategy):
         if not self.position:
             if self.rsi < self.params.rsi_low:
                 self.buy(size=10)
+                print('{} BUY ORDER at Close Price {}'.format(self.datetime.datetime(), self.data.close[0]))
         else:
             if self.rsi > self.params.rsi_high:
                 self.sell(size=10)
+                print('{} SELL ORDER at Close Price {}'.format(self.datetime.datetime(), self.data.close[0]))
 
 if opt_mode == False:
     def printTradeAnalysis(analyzer):
@@ -114,10 +116,6 @@ if __name__ == '__main__':
     # Create an instance of cerebro
     cerebro = bt.Cerebro(optreturn=False)
 
-    #ADD OBSERTVERS _ WIP
-    cerebro.addobserver(bt.observers.Trades)
-    #cerebro.addobserver(bt.observers.BuySell)
-
     # Add the analyzers we are interested in
     #cerebro.addanalyzer(bt.analyzers.TradeAnalyzer, _name="ta")
     #cerebro.addanalyzer(bt.analyzers.SQN, _name="sqn")
@@ -127,12 +125,18 @@ if __name__ == '__main__':
 
     if opt_mode == True:
         # ADD STRATEGY OPTIMISATION
-        cerebro.optstrategy(firstStrategy, period=range(10, 18), rsi_low=range(36, 46), rsi_high=range(61, 71))
+        cerebro.optstrategy(firstStrategy, period=range(11, 18), rsi_low=range(36, 46), rsi_high=range(61, 71))
     else:
         #ADD STRATEGY
         cerebro.addstrategy(firstStrategy)
+        #ADD OBSERTVERS WIP
+        cerebro.addobserver(bt.observers.Trades)
+        cerebro.addobserver(bt.observers.BuySell)
+        #cerebro.addobserver(bt.observers.LogReturns)
+        #cerebro.addobserver(bt.observers.LogReturns2)
 
-# DATA FEED FROM EXCHANGE
+
+    # DATA FEED FROM EXCHANGE
     symbol = str('ETH/USDT')
     timeframe = str('15m')
     exchange = str('poloniex')
@@ -201,7 +205,7 @@ if __name__ == '__main__':
     time_elapsed = round(time_at_end - time_at_start,2)
     print('Time elapsed: {} seconds'.format(time_elapsed))
     print ('Running Cerebro')
-    opt_runs = cerebro.run(stdstats=True)
+    opt_runs = cerebro.run()
     firstStrat = opt_runs[0]
 
 
