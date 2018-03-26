@@ -6,6 +6,8 @@ import backtrader as bt
 import backtrader.feeds as btfeed
 import ccxt
 import pandas as pd
+import backtrader.analyzers as btanalyzers
+
 from collections import OrderedDict
 
 
@@ -61,6 +63,7 @@ class firstStrategy(bt.Strategy):
     )
 
     def __init__(self):
+        self.set_tradehistory(True) # SWITCHED THIS ON TO GET THE TRADE HISTORY
         self.startcash = self.broker.getvalue()
         self.rsi = bt.indicators.RSI_SMA(self.data.close, period=self.params.period)
 
@@ -68,9 +71,14 @@ class firstStrategy(bt.Strategy):
         if not self.position:
             if self.rsi < self.params.rsi_low:
                 self.buy(size=10)
+                #if opt_mode == False: print('{},BUY,{},PNL'.format(self.datetime.datetime(), self.data.close[0]))
+
         else:
             if self.rsi > self.params.rsi_high:
                 self.sell(size=10)
+                #if opt_mode == False: print('{},SELL,{},PNL'.format(self.datetime.datetime(), self.data.close[0]))
+
+                tradesfordata = self._trades[data][0]  # list of trades for data
 
 if opt_mode == False:
     def printTradeAnalysis(analyzer):
@@ -107,6 +115,9 @@ if opt_mode == False:
         sqn = round(analyzer.sqn,2)
         print('SQN: {}'.format(sqn))
 
+    def notify_trade(self, trade):
+        thedata = trade.data
+
 # INPUT CONDITIONS TO FEED INTO CEREBRO IS ADDED HERE
 if __name__ == '__main__':
     # Variable for our starting cash
@@ -115,20 +126,23 @@ if __name__ == '__main__':
     cerebro = bt.Cerebro(optreturn=False)
 
     # Add the analyzers we are interested in
+    cerebro.addanalyzer(btanalyzers.Transactions, _name='mytransactions')
+    cerebro.addanalyzer(btanalyzers.TradeAnalyzer, _name='mytrades')
     #cerebro.addanalyzer(bt.analyzers.TradeAnalyzer, _name="ta")
     #cerebro.addanalyzer(bt.analyzers.SQN, _name="sqn")
 
     # Timing the whole operation
     time_at_start = time.time()
 
+
     if opt_mode == True:
         # ADD STRATEGY OPTIMISATION
-        cerebro.optstrategy(firstStrategy, period=range(11, 18), rsi_low=range(36, 46), rsi_high=range(61, 71))
+        cerebro.optstrategy(firstStrategy, period=range(11, 12), rsi_low=range(36, 37), rsi_high=range(61, 63))
     else:
         #ADD STRATEGY
         cerebro.addstrategy(firstStrategy)
         #ADD OBSERTVERS WIP
-        #cerebro.addobserver(bt.observers.Trades)
+        cerebro.addobserver(bt.observers.Trades)
         #cerebro.addobserver(bt.observers.BuySell)
         #cerebro.addobserver(bt.observers.LogReturns)
         #cerebro.addobserver(bt.observers.LogReturns2)
@@ -197,19 +211,13 @@ if __name__ == '__main__':
         cerebro.addanalyzer(bt.analyzers.TradeAnalyzer, _name="ta")
         cerebro.addanalyzer(bt.analyzers.SQN, _name="sqn")
 
-
-    #WRITER TEST
-    cerebro.addwriter(bt.WriterFile, csv=True, rounding=2)
-
-
-
     # RUN STRATEGY THROUGH CEREBRO USING INPUT DATA
     # Timing the operation
     time_at_end = time.time()
     time_elapsed = round(time_at_end - time_at_start,2)
     print('Time elapsed: {} seconds'.format(time_elapsed))
     print ('Running Cerebro')
-    opt_runs = cerebro.run(tradehistory=False)
+    opt_runs = cerebro.run()
     firstStrat = opt_runs[0]
 
 
@@ -240,11 +248,8 @@ if __name__ == '__main__':
     # Timing the operation
     time_at_end = time.time()
     time_elapsed = round(time_at_end - time_at_start,2)
-    #trades = [str(trade).splitlines() for trade in list(firstStrat._trades.values())[0][0]]
-    #print(trades)
-
-    #for trade in list(firstStrat._trades.values())[0][0]:
-    #    print (trade)
+    trades = [str(trade).splitlines() for trade in list(firstStrat._trades.values())[0][0]]
+    print(trades)
 
     print('Time elapsed: {} seconds'.format(time_elapsed))
     if opt_mode == False:
@@ -252,9 +257,16 @@ if __name__ == '__main__':
         printTradeAnalysis(firstStrat.analyzers.ta.get_analysis())
         printSQN(firstStrat.analyzers.sqn.get_analysis())
 
-        #Get final portfolio Value
+        print('Transactions:', firstStrat.analyzers.mytransactions.get_analysis())
+        print('TradeAnalyser:', firstStrat.analyzers.mytrades.get_analysis())
+
+
+
+#Get final portfolio Value
         portvalue = cerebro.broker.getvalue()
 
         #Print out the final result
         print('Final Portfolio Value: ${}'.format(portvalue))
-        cerebro.plot(style='candlestick')
+
+    cerebro.plot(style='candlestick')
+
