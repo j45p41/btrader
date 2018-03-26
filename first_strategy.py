@@ -8,7 +8,6 @@ import ccxt
 import pandas as pd
 from collections import OrderedDict
 
-
 # DECLARE MODE FOR PROGRAM - OPTOMISATION OR STRATEGY
 opt_mode = False
 
@@ -114,10 +113,6 @@ if __name__ == '__main__':
     # Create an instance of cerebro
     cerebro = bt.Cerebro(optreturn=False)
 
-    # Add the analyzers we are interested in
-    #cerebro.addanalyzer(bt.analyzers.TradeAnalyzer, _name="ta")
-    #cerebro.addanalyzer(bt.analyzers.SQN, _name="sqn")
-
     # Timing the whole operation
     time_at_start = time.time()
 
@@ -127,12 +122,6 @@ if __name__ == '__main__':
     else:
         #ADD STRATEGY
         cerebro.addstrategy(firstStrategy)
-        #ADD OBSERTVERS WIP
-        #cerebro.addobserver(bt.observers.Trades)
-        #cerebro.addobserver(bt.observers.BuySell)
-        #cerebro.addobserver(bt.observers.LogReturns)
-        #cerebro.addobserver(bt.observers.LogReturns2)
-
 
     # DATA FEED FROM EXCHANGE
     symbol = str('ETH/USDT')
@@ -201,8 +190,6 @@ if __name__ == '__main__':
     #WRITER TEST
     cerebro.addwriter(bt.WriterFile, csv=True, rounding=2)
 
-
-
     # RUN STRATEGY THROUGH CEREBRO USING INPUT DATA
     # Timing the operation
     time_at_end = time.time()
@@ -240,8 +227,6 @@ if __name__ == '__main__':
     # Timing the operation
     time_at_end = time.time()
     time_elapsed = round(time_at_end - time_at_start,2)
-    #trades = [str(trade).splitlines() for trade in list(firstStrat._trades.values())[0][0]]
-    #print(trades)
 
     #for trade in list(firstStrat._trades.values())[0][0]:
     #    print (trade)
