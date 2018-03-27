@@ -153,11 +153,19 @@ if __name__ == '__main__':
     sys.stdout = Logger("firststrategy.log")
 
 
-    periods = pd.DataFrame(columns=['FROM','TO'],index=[1,2,3])
+    periods = pd.DataFrame(columns=['FROM','TO'],index=[1,2,3,4,5,6,7,8,9,10,11,12])
     periods.loc[1] = ('2017-01-01','2017-02-01')
     periods.loc[2] = ('2017-02-01','2017-03-01')
     periods.loc[3] = ('2017-03-01','2017-04-01')
-
+    periods.loc[4] = ('2017-04-01','2017-05-01')
+    periods.loc[5] = ('2017-05-01','2017-06-01')
+    periods.loc[6] = ('2017-06-01','2017-07-01')
+    periods.loc[7] = ('2017-07-01','2017-08-01')
+    periods.loc[8] = ('2017-08-01','2017-09-01')
+    periods.loc[9] = ('2017-09-01','2017-10-01')
+    periods.loc[10] = ('2017-10-01','2017-11-01')
+    periods.loc[11] = ('2017-11-01','2017-12-01')
+    periods.loc[12] = ('2017-12-01','2017-12-31')
 
     for index, row in periods.iterrows():
 
