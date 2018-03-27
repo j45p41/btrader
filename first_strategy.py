@@ -9,9 +9,27 @@ import csv
 import io
 import pandas as pd
 from collections import OrderedDict
+from multiprocessing import Pool, cpu_count
+import math
+import psutil
+import os
+
 
 # DECLARE MODE FOR PROGRAM - OPTOMISATION OR STRATEGY
 opt_mode = True
+
+# LOG OUTPUT TO FILE
+class Logger(object):
+    def __init__(self, filename="Default.log"):
+        self.terminal = sys.stdout
+        self.log = open(filename, "a")
+
+    def write(self, message):
+        self.terminal.write(message)
+        self.log.write(message)
+
+    def flush(self):
+        pass
 
 # CSV INPUT FILE FORMAT CONFIGURATION
 class dataFeed(btfeed.GenericCSVData):
@@ -125,6 +143,9 @@ if opt_mode == False:
 # INPUT CONDITIONS TO FEED INTO CEREBRO IS ADDED HERE
 if __name__ == '__main__':
 
+    sys.stdout = Logger("firststrategy.log")
+
+
     periods = pd.DataFrame(columns=['FROM','TO'],index=[1,2,3])
     periods.loc[1] = ('2017-01-01','2017-02-01')
     periods.loc[2] = ('2017-02-01','2017-03-01')
@@ -144,7 +165,8 @@ if __name__ == '__main__':
 
         if opt_mode:
             # ADD STRATEGY OPTIMISATION
-            cerebro.optstrategy(firstStrategy, period=range(11, 20), rsi_low=range(10, 50), rsi_high=range(50, 90))
+            #cerebro.optstrategy(firstStrategy, period=range(11, 20), rsi_low=range(10, 50), rsi_high=range(50, 90))
+            cerebro.optstrategy(firstStrategy, period=range(15, 16), rsi_low=range(21, 22), rsi_high=range(60, 61))
         else:
             #ADD STRATEGY
             cerebro.addstrategy(firstStrategy)
@@ -161,8 +183,6 @@ if __name__ == '__main__':
         #(1440 minutes in one day * 7 days) / 15 minutes = 576 candles
 
         num_of_candles = 672
-
-
 
         def to_unix_time(timestamp):
             epoch = datetime.datetime.utcfromtimestamp(0)  # start of epoch time
@@ -253,30 +273,12 @@ if __name__ == '__main__':
             print('Results: Ordered by Profit:')
             for result in by_PnL:
                 if result_number < 3:
-                    print('Period: {}, rsi_low: {}, rsi_high: {}, PnL: {}'.format(result[0], result[1], result[2], result[3]))
+                    print('Asset: {} Start: {}, End: {}, Period: {}, rsi_low: {}, rsi_high: {}, PnL: {}'.format(filename, periods['FROM'][index], periods['TO'][index], result[0], result[1], result[2], result[3]))
                     result_number = result_number + 1
 
         # Timing the operation
         time_at_end = time.time()
         time_elapsed = round(time_at_end - time_at_start,2)
-
-        #for trade in list(firstStrat._trades.values())[0][0]:
-        #    print (trade)
-
-       #with open(out_filename,'w') as f1:
-    #        #writer=csv.writer(f1)
-    #    for trade_val in list(firstStrat._trades.values())[0][0]:
-    #        line = str(trade_val)
-    #        line2 = line.replace("\n", ",")
-    #        line2 = line2.replace("\r", "x")
-
-    #        data_out = pd.read_csv(io.StringIO(line2),delimiter=':',sep='/n', index_col=0)
-    #        data_out.dropna(axis=1)
-    #        data_out.drop_duplicates()
-    #        data_out.drop(data_out.columns[1-10], axis=1)
-    #        print(data_out)
-
-            #writer.writerow([line2])
 
 
         print('Time elapsed: {} seconds'.format(time_elapsed))
