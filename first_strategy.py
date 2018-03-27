@@ -11,7 +11,6 @@ import pandas as pd
 from collections import OrderedDict
 from multiprocessing import Pool, cpu_count
 import math
-import psutil
 import os
 
 
@@ -166,7 +165,7 @@ if __name__ == '__main__':
         if opt_mode:
             # ADD STRATEGY OPTIMISATION
             #cerebro.optstrategy(firstStrategy, period=range(11, 20), rsi_low=range(10, 50), rsi_high=range(50, 90))
-            cerebro.optstrategy(firstStrategy, period=range(15, 16), rsi_low=range(21, 22), rsi_high=range(60, 61))
+            cerebro.optstrategy(firstStrategy, period=range(10, 20), rsi_low=range(25, 50), rsi_high=range(55, 80))
         else:
             #ADD STRATEGY
             cerebro.addstrategy(firstStrategy)
