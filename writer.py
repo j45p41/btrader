@@ -68,8 +68,15 @@ class LongShortStrategy(bt.Strategy):
                 self.log('SELL CREATE , %.2f' % self.data.close[0])
                 self.sell(size=self.p.stake)
 
+ 
 
+    def notify_trade(self, trade):
+        if trade.isclosed:
+            self.log('TRADE PROFIT, GROSS %.2f, NET %.2f' %
+                     (trade.pnl, trade.pnlcomm))
 
+        elif trade.justopened:
+            self.log('TRADE OPENED, SIZE %2d' % trade.size)
 
 
 def runstrategy():
