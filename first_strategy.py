@@ -11,7 +11,7 @@ import pandas as pd
 from collections import OrderedDict
 
 # DECLARE MODE FOR PROGRAM - OPTOMISATION OR STRATEGY
-opt_mode = False
+opt_mode = True
 
 # CSV INPUT FILE FORMAT CONFIGURATION
 class dataFeed(btfeed.GenericCSVData):
@@ -61,21 +61,24 @@ class firstStrategy(bt.Strategy):
         ("rsi_high", 63),
     )
 
+    #TRADE LOGGING FUNCTION
     def log(self, txt, dt=None):
         ''' Logging function fot this strategy'''
-        dt = dt or self.datas[0].datetime.date(0)
-        print('%s, %s' % (dt.isoformat(), txt))
+        if not opt_mode:
+            dt = dt or self.datas[0].datetime.datetime(0)
+            print('%s, %s' % (dt.isoformat(), txt))
 
     def __init__(self):
         self.startcash = self.broker.getvalue()
         self.rsi = bt.indicators.RSI_SMA(self.data.close, period=self.params.period)
 
+    #TRADE LOGGING FUNCTION
     def notify_trade(self, trade):
-        if not trade.isclosed:
+        if not trade.isclosed and not opt_mode:
             return
 
-        self.log('OPERATION PROFIT, GROSS %.2f, NET %.2f' %
-                 (trade.pnl, trade.pnlcomm))
+        self.log('TRADE INFO, PRICE  %.2f, GROSS %.2f, NET %.2f' %
+                 (trade.price, trade.pnl, trade.pnlcomm))
     def next(self):
         if not self.position:
             if self.rsi < self.params.rsi_low:
@@ -121,155 +124,170 @@ if opt_mode == False:
 
 # INPUT CONDITIONS TO FEED INTO CEREBRO IS ADDED HERE
 if __name__ == '__main__':
-    # Variable for our starting cash
-    startcash = 10000
-    # Create an instance of cerebro
-    cerebro = bt.Cerebro(optreturn=False)
 
-    # Timing the whole operation
-    time_at_start = time.time()
-
-    if opt_mode == True:
-        # ADD STRATEGY OPTIMISATION
-        cerebro.optstrategy(firstStrategy, period=range(11, 18), rsi_low=range(36, 46), rsi_high=range(61, 71))
-    else:
-        #ADD STRATEGY
-        cerebro.addstrategy(firstStrategy)
-
-    # DATA FEED FROM EXCHANGE
-    symbol = str('ETH/USDT')
-    timeframe = str('15m')
-    exchange = str('poloniex')
-    exchange_out = str(exchange)
-    start_date = str('2017-1-1 00:00:00')
-    get_data = False
-
-    #So, let's say, you are fetching 2 days of 5m timeframe:
-    #(1440 minutes in one day * 7 days) / 15 minutes = 576 candles
-
-    num_of_candles = 672
+    periods = pd.DataFrame(columns=['FROM','TO'],index=[1,2,3])
+    periods.loc[1] = ('2017-01-01','2017-02-01')
+    periods.loc[2] = ('2017-02-01','2017-03-01')
+    periods.loc[3] = ('2017-03-01','2017-04-01')
 
 
-
-    def to_unix_time(timestamp):
-        epoch = datetime.datetime.utcfromtimestamp(0)  # start of epoch time
-        my_time = datetime.datetime.strptime(timestamp, "%Y-%m-%d %H:%M:%S")  # plugin your time object
-        delta = my_time - epoch
-        return delta.total_seconds() * 1000
-
-    # CSV File Name
-    symbol_out = symbol.replace("/", "")
-    filename = '{}-{}-{}.csv'.format(exchange_out, symbol_out, timeframe)
-    out_filename = '{}-{}-{}-out.csv'.format(exchange_out, symbol_out, timeframe)
+    for index, row in periods.iterrows():
 
 
-    # Get data if needed
+        # Variable for our starting cash
+        startcash = 10000
+        # Create an instance of cerebro
+        cerebro = bt.Cerebro(optreturn=False)
 
-    if get_data == True:
-        # Get our Exchange
-        exchange = getattr(ccxt, exchange)()
-        exchange.load_markets()
-        hist_start_date = int(to_unix_time(start_date))
-        #data = exchange.fetch_ohlcv(symbol, timeframe, since=hist_start_date, limit=num_of_candles)
-        data = exchange.fetch_ohlcv(symbol, timeframe, since=hist_start_date)
-        header = ['Timestamp', 'Open', 'High', 'Low', 'Close', 'Volume']
-        df = pd.DataFrame(data, columns=header)
-        df['Timestamp'] = pd.to_datetime(df['Timestamp'], unit='ms')
+        # Timing the whole operation
+        time_at_start = time.time()
 
-        #Precision
-        df = df.round(3)
+        if opt_mode:
+            # ADD STRATEGY OPTIMISATION
+            cerebro.optstrategy(firstStrategy, period=range(11, 20), rsi_low=range(10, 50), rsi_high=range(50, 90))
+        else:
+            #ADD STRATEGY
+            cerebro.addstrategy(firstStrategy)
 
-        # Save it
-        df.to_csv(filename, index= False)
+        # DATA FEED FROM EXCHANGE
+        symbol = str('ETH/USDT')
+        timeframe = str('15m')
+        exchange = str('poloniex')
+        exchange_out = str(exchange)
+        start_date = str('2017-1-1 00:00:00')
+        get_data = False
 
-    #READ DATA FROM CSV FILE
-    modpath = os.path.dirname(os.path.abspath(sys.argv[0]))
-    datapath = os.path.join(modpath,str(filename))
-    data = dataFeed(dataname=datapath, timeframe=bt.TimeFrame.Minutes, compression=15,
-                    fromdate=datetime.datetime(2017, 1, 1),
-                    todate=datetime.datetime(2017, 1, 31),)
+        #So, let's say, you are fetching 2 days of 5m timeframe:
+        #(1440 minutes in one day * 7 days) / 15 minutes = 576 candles
 
-    # Add the data to Cerebro
-    cerebro.adddata(data)
-
-    # Set our desired cash start
-    cerebro.broker.setcash(startcash)
-
-    if opt_mode == False:
-        # Add the analyzers we are interested in
-        cerebro.addanalyzer(bt.analyzers.TradeAnalyzer, _name="ta")
-        cerebro.addanalyzer(bt.analyzers.SQN, _name="sqn")
+        num_of_candles = 672
 
 
-    #WRITER TEST
-    #cerebro.addwriter(bt.WriterFile, csv=True, rounding=2)
 
-    # RUN STRATEGY THROUGH CEREBRO USING INPUT DATA
-    # Timing the operation
-    time_at_end = time.time()
-    time_elapsed = round(time_at_end - time_at_start,2)
-    print('Time elapsed: {} seconds'.format(time_elapsed))
-    print ('Running Cerebro')
-    opt_runs = cerebro.run(tradehistory=False)
-    firstStrat = opt_runs[0]
+        def to_unix_time(timestamp):
+            epoch = datetime.datetime.utcfromtimestamp(0)  # start of epoch time
+            my_time = datetime.datetime.strptime(timestamp, "%Y-%m-%d %H:%M:%S")  # plugin your time object
+            delta = my_time - epoch
+            return delta.total_seconds() * 1000
 
-
-    if opt_mode == True:
-        # CREATE A LIST VARIABLE THAT CONTAINS RESULTS
-        final_results_list = []
-        for run in opt_runs:
-            for strategy in run:
-                value = round(strategy.broker.get_value(), 2)
-                PnL = round(value - startcash, 2)
-                period = strategy.params.period
-                rsi_low = strategy.params.rsi_low
-                rsi_high = strategy.params.rsi_high
-                final_results_list.append([period, rsi_low, rsi_high, PnL])
-
-        # Sort Results List
-        by_period = sorted(final_results_list, key=lambda x: x[0])
-        by_PnL = sorted(final_results_list, key=lambda x: x[3], reverse=True)
-
-        # PRINT RESULTS IN OPTIMISATION AND FILTER TOP 3
-        result_number = 0
-        print('Results: Ordered by Profit:')
-        for result in by_PnL:
-            if result_number < 3:
-                print('Period: {}, rsi_low: {}, rsi_high: {}, PnL: {}'.format(result[0], result[1], result[2], result[3]))
-                result_number = result_number + 1
-
-    # Timing the operation
-    time_at_end = time.time()
-    time_elapsed = round(time_at_end - time_at_start,2)
-
-    #for trade in list(firstStrat._trades.values())[0][0]:
-    #    print (trade)
-
-   #with open(out_filename,'w') as f1:
-#        #writer=csv.writer(f1)
-#    for trade_val in list(firstStrat._trades.values())[0][0]:
-#        line = str(trade_val)
-#        line2 = line.replace("\n", ",")
-#        line2 = line2.replace("\r", "x")
-
-#        data_out = pd.read_csv(io.StringIO(line2),delimiter=':',sep='/n', index_col=0)
-#        data_out.dropna(axis=1)
-#        data_out.drop_duplicates()
-#        data_out.drop(data_out.columns[1-10], axis=1)
-#        print(data_out)
-
-        #writer.writerow([line2])
+        # CSV File Name
+        symbol_out = symbol.replace("/", "")
+        filename = '{}-{}-{}.csv'.format(exchange_out, symbol_out, timeframe)
+        out_filename = '{}-{}-{}-out.csv'.format(exchange_out, symbol_out, timeframe)
 
 
-    print('Time elapsed: {} seconds'.format(time_elapsed))
-    if opt_mode == False:
-        # print the analyzers
-        printTradeAnalysis(firstStrat.analyzers.ta.get_analysis())
-        printSQN(firstStrat.analyzers.sqn.get_analysis())
+        # Get data if needed
 
-        #Get final portfolio Value
-        portvalue = cerebro.broker.getvalue()
+        if get_data:
+            # Get our Exchange
+            exchange = getattr(ccxt, exchange)()
+            exchange.load_markets()
+            hist_start_date = int(to_unix_time(start_date))
+            #data = exchange.fetch_ohlcv(symbol, timeframe, since=hist_start_date, limit=num_of_candles)
+            data = exchange.fetch_ohlcv(symbol, timeframe, since=hist_start_date)
+            header = ['Timestamp', 'Open', 'High', 'Low', 'Close', 'Volume']
+            df = pd.DataFrame(data, columns=header)
+            df['Timestamp'] = pd.to_datetime(df['Timestamp'], unit='ms')
 
-        #Print out the final result
-        print('Final Portfolio Value: ${}'.format(portvalue))
-        #cerebro.plot(style='candlestick')
+            #Precision
+            df = df.round(3)
+
+            # Save it
+            df.to_csv(filename, index= False)
+
+        #format dates for datafeed object
+        fy,fm,fd = periods['FROM'][index].split('-')
+        ty,tm,td = periods['TO'][index].split('-')
+
+
+#READ DATA FROM CSV FILE
+        modpath = os.path.dirname(os.path.abspath(sys.argv[0]))
+        datapath = os.path.join(modpath,str(filename))
+        data = dataFeed(dataname=datapath, timeframe=bt.TimeFrame.Minutes, compression=15,
+                        fromdate=datetime.datetime(int(fy),int(fm),int(fd)),
+                        todate=datetime.datetime(int(ty),int(tm),int(td)),)
+
+        # Add the data to Cerebro
+        cerebro.adddata(data)
+
+        # Set our desired cash start
+        cerebro.broker.setcash(startcash)
+
+        if not opt_mode:
+            # Add the analyzers we are interested in
+            cerebro.addanalyzer(bt.analyzers.TradeAnalyzer, _name="ta")
+            cerebro.addanalyzer(bt.analyzers.SQN, _name="sqn")
+
+
+        #WRITER TEST
+        #cerebro.addwriter(bt.WriterFile, csv=True, rounding=2)
+
+        # RUN STRATEGY THROUGH CEREBRO USING INPUT DATA
+        # Timing the operation
+        time_at_end = time.time()
+        time_elapsed = round(time_at_end - time_at_start,2)
+        print('Time elapsed: {} seconds'.format(time_elapsed))
+        print ('Running Cerebro')
+        opt_runs = cerebro.run(tradehistory=False)
+        firstStrat = opt_runs[0]
+
+
+        if opt_mode:
+            # CREATE A LIST VARIABLE THAT CONTAINS RESULTS
+            final_results_list = []
+            for run in opt_runs:
+                for strategy in run:
+                    value = round(strategy.broker.get_value(), 2)
+                    PnL = round(value - startcash, 2)
+                    period = strategy.params.period
+                    rsi_low = strategy.params.rsi_low
+                    rsi_high = strategy.params.rsi_high
+                    final_results_list.append([period, rsi_low, rsi_high, PnL])
+
+            # Sort Results List
+            by_period = sorted(final_results_list, key=lambda x: x[0])
+            by_PnL = sorted(final_results_list, key=lambda x: x[3], reverse=True)
+
+            # PRINT RESULTS IN OPTIMISATION AND FILTER TOP 3
+            result_number = 0
+            print('Results: Ordered by Profit:')
+            for result in by_PnL:
+                if result_number < 3:
+                    print('Period: {}, rsi_low: {}, rsi_high: {}, PnL: {}'.format(result[0], result[1], result[2], result[3]))
+                    result_number = result_number + 1
+
+        # Timing the operation
+        time_at_end = time.time()
+        time_elapsed = round(time_at_end - time_at_start,2)
+
+        #for trade in list(firstStrat._trades.values())[0][0]:
+        #    print (trade)
+
+       #with open(out_filename,'w') as f1:
+    #        #writer=csv.writer(f1)
+    #    for trade_val in list(firstStrat._trades.values())[0][0]:
+    #        line = str(trade_val)
+    #        line2 = line.replace("\n", ",")
+    #        line2 = line2.replace("\r", "x")
+
+    #        data_out = pd.read_csv(io.StringIO(line2),delimiter=':',sep='/n', index_col=0)
+    #        data_out.dropna(axis=1)
+    #        data_out.drop_duplicates()
+    #        data_out.drop(data_out.columns[1-10], axis=1)
+    #        print(data_out)
+
+            #writer.writerow([line2])
+
+
+        print('Time elapsed: {} seconds'.format(time_elapsed))
+        if opt_mode == False:
+            # print the analyzers
+            printTradeAnalysis(firstStrat.analyzers.ta.get_analysis())
+            printSQN(firstStrat.analyzers.sqn.get_analysis())
+
+            #Get final portfolio Value
+            portvalue = cerebro.broker.getvalue()
+
+            #Print out the final result
+            print('Final Portfolio Value: ${}'.format(portvalue))
+            #cerebro.plot(style='candlestick')
