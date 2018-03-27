@@ -16,6 +16,10 @@ import os
 
 # DECLARE MODE FOR PROGRAM - OPTOMISATION OR STRATEGY
 opt_mode = True
+DEBUG = True
+period=0
+rsi_low=0
+rsi_high=0
 
 # LOG OUTPUT TO FILE
 class Logger(object):
@@ -97,6 +101,7 @@ class firstStrategy(bt.Strategy):
         self.log('TRADE INFO, PRICE  %.2f, GROSS %.2f, NET %.2f' %
                  (trade.price, trade.pnl, trade.pnlcomm))
     def next(self):
+        if opt_mode and DEBUG: print('period: {}, rsi low: {}, rsi high {}'.format(self.params.period,self.params.rsi_low,self.params.rsi_high))
         if not self.position:
             if self.rsi < self.params.rsi_low:
                 self.buy(size=10)
@@ -165,7 +170,7 @@ if __name__ == '__main__':
         if opt_mode:
             # ADD STRATEGY OPTIMISATION
             #cerebro.optstrategy(firstStrategy, period=range(11, 20), rsi_low=range(10, 50), rsi_high=range(50, 90))
-            cerebro.optstrategy(firstStrategy, period=range(10, 20), rsi_low=range(25, 50), rsi_high=range(55, 80))
+            cerebro.optstrategy(firstStrategy, period=range(11, 20), rsi_low=range(10, 50), rsi_high=range(40, 90))
         else:
             #ADD STRATEGY
             cerebro.addstrategy(firstStrategy)
