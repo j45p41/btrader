@@ -4,7 +4,9 @@ import os.path
 import sys
 import backtrader as bt
 import backtrader.feeds as btfeed
-import ccxt
+#import ccxt
+import csv
+import io
 import pandas as pd
 from collections import OrderedDict
 
@@ -59,10 +61,21 @@ class firstStrategy(bt.Strategy):
         ("rsi_high", 63),
     )
 
+    def log(self, txt, dt=None):
+        ''' Logging function fot this strategy'''
+        dt = dt or self.datas[0].datetime.date(0)
+        print('%s, %s' % (dt.isoformat(), txt))
+
     def __init__(self):
         self.startcash = self.broker.getvalue()
         self.rsi = bt.indicators.RSI_SMA(self.data.close, period=self.params.period)
 
+    def notify_trade(self, trade):
+        if not trade.isclosed:
+            return
+
+        self.log('OPERATION PROFIT, GROSS %.2f, NET %.2f' %
+                 (trade.pnl, trade.pnlcomm))
     def next(self):
         if not self.position:
             if self.rsi < self.params.rsi_low:
@@ -129,16 +142,13 @@ if __name__ == '__main__':
     exchange = str('poloniex')
     exchange_out = str(exchange)
     start_date = str('2017-1-1 00:00:00')
-    get_data = True
+    get_data = False
 
     #So, let's say, you are fetching 2 days of 5m timeframe:
     #(1440 minutes in one day * 7 days) / 15 minutes = 576 candles
 
     num_of_candles = 672
 
-    # Get our Exchange
-    exchange = getattr(ccxt, exchange)()
-    exchange.load_markets()
 
 
     def to_unix_time(timestamp):
@@ -150,11 +160,15 @@ if __name__ == '__main__':
     # CSV File Name
     symbol_out = symbol.replace("/", "")
     filename = '{}-{}-{}.csv'.format(exchange_out, symbol_out, timeframe)
+    out_filename = '{}-{}-{}-out.csv'.format(exchange_out, symbol_out, timeframe)
 
 
     # Get data if needed
 
-    if get_data == False:
+    if get_data == True:
+        # Get our Exchange
+        exchange = getattr(ccxt, exchange)()
+        exchange.load_markets()
         hist_start_date = int(to_unix_time(start_date))
         #data = exchange.fetch_ohlcv(symbol, timeframe, since=hist_start_date, limit=num_of_candles)
         data = exchange.fetch_ohlcv(symbol, timeframe, since=hist_start_date)
@@ -188,7 +202,7 @@ if __name__ == '__main__':
 
 
     #WRITER TEST
-    cerebro.addwriter(bt.WriterFile, csv=True, rounding=2)
+    #cerebro.addwriter(bt.WriterFile, csv=True, rounding=2)
 
     # RUN STRATEGY THROUGH CEREBRO USING INPUT DATA
     # Timing the operation
@@ -231,6 +245,22 @@ if __name__ == '__main__':
     #for trade in list(firstStrat._trades.values())[0][0]:
     #    print (trade)
 
+   #with open(out_filename,'w') as f1:
+#        #writer=csv.writer(f1)
+#    for trade_val in list(firstStrat._trades.values())[0][0]:
+#        line = str(trade_val)
+#        line2 = line.replace("\n", ",")
+#        line2 = line2.replace("\r", "x")
+
+#        data_out = pd.read_csv(io.StringIO(line2),delimiter=':',sep='/n', index_col=0)
+#        data_out.dropna(axis=1)
+#        data_out.drop_duplicates()
+#        data_out.drop(data_out.columns[1-10], axis=1)
+#        print(data_out)
+
+        #writer.writerow([line2])
+
+
     print('Time elapsed: {} seconds'.format(time_elapsed))
     if opt_mode == False:
         # print the analyzers
@@ -242,4 +272,4 @@ if __name__ == '__main__':
 
         #Print out the final result
         print('Final Portfolio Value: ${}'.format(portvalue))
-        cerebro.plot(style='candlestick')
+        #cerebro.plot(style='candlestick')
