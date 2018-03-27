@@ -19,7 +19,7 @@ opt_mode = True
 DEBUG = True
 period=0
 rsi_low=0
-rsi_high=0
+last_rsi_high=0
 
 # LOG OUTPUT TO FILE
 class Logger(object):
@@ -92,6 +92,7 @@ class firstStrategy(bt.Strategy):
     def __init__(self):
         self.startcash = self.broker.getvalue()
         self.rsi = bt.indicators.RSI_SMA(self.data.close, period=self.params.period)
+        last_rsi_high = 10
 
     #TRADE LOGGING FUNCTION
     def notify_trade(self, trade):
@@ -100,14 +101,16 @@ class firstStrategy(bt.Strategy):
 
         self.log('TRADE INFO, PRICE  %.2f, GROSS %.2f, NET %.2f' %
                  (trade.price, trade.pnl, trade.pnlcomm))
+
     def next(self):
-        if opt_mode and DEBUG: print('period: {}, rsi low: {}, rsi high {}'.format(self.params.period,self.params.rsi_low,self.params.rsi_high))
         if not self.position:
             if self.rsi < self.params.rsi_low:
                 self.buy(size=10)
         else:
             if self.rsi > self.params.rsi_high:
                 self.sell(size=10)
+        if opt_mode and DEBUG and self.params.rsi_low == 10 and self.params.rsi_high == 40:
+            print('period: {}, rsi low: {}, rsi high {}'.format(self.params.period,self.params.rsi_low,self.params.rsi_high))
 
 if opt_mode == False:
     def printTradeAnalysis(analyzer):
