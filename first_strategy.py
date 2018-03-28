@@ -109,7 +109,7 @@ class firstStrategy(bt.Strategy):
         else:
             if self.rsi > self.params.rsi_high:
                 self.sell(size=10)
-        if opt_mode and DEBUG and self.params.rsi_low == 10 and self.params.rsi_high == 40:
+        if opt_mode and DEBUG:
             print('period: {}, rsi low: {}, rsi high {}'.format(self.params.period,self.params.rsi_low,self.params.rsi_high))
 
 if opt_mode == False:
@@ -181,7 +181,7 @@ if __name__ == '__main__':
         if opt_mode:
             # ADD STRATEGY OPTIMISATION
             #cerebro.optstrategy(firstStrategy, period=range(11, 20), rsi_low=range(10, 50), rsi_high=range(50, 90))
-            cerebro.optstrategy(firstStrategy, period=range(11, 20), rsi_low=range(10, 50), rsi_high=range(40, 90))
+            cerebro.optstrategy(firstStrategy, period=range(12, 20), rsi_low=range(10, 50), rsi_high=range(40, 90))
         else:
             #ADD STRATEGY
             cerebro.addstrategy(firstStrategy)
@@ -263,7 +263,7 @@ if __name__ == '__main__':
         time_elapsed = round(time_at_end - time_at_start,2)
         print('Time elapsed: {} seconds'.format(time_elapsed))
         print ('Running Cerebro')
-        opt_runs = cerebro.run(tradehistory=False, maxcpus=7)
+        opt_runs = cerebro.run(tradehistory=False)
         firstStrat = opt_runs[0]
 
 
