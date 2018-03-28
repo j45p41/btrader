@@ -263,7 +263,7 @@ if __name__ == '__main__':
         time_elapsed = round(time_at_end - time_at_start,2)
         print('Time elapsed: {} seconds'.format(time_elapsed))
         print ('Running Cerebro')
-        opt_runs = cerebro.run(tradehistory=False)
+        opt_runs = cerebro.run(tradehistory=False, maxcpus=7)
         firstStrat = opt_runs[0]
 
 
