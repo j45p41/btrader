@@ -16,7 +16,7 @@ import os
 
 # DECLARE MODE FOR PROGRAM - OPTOMISATION OR STRATEGY
 opt_mode = True
-DEBUG = True
+DEBUG = False
 period=0
 rsi_low=0
 last_rsi_high=0
