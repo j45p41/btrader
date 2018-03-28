@@ -180,8 +180,8 @@ if __name__ == '__main__':
 
         if opt_mode:
             # ADD STRATEGY OPTIMISATION
-            #cerebro.optstrategy(firstStrategy, period=range(11, 20), rsi_low=range(10, 50), rsi_high=range(50, 90))
-            cerebro.optstrategy(firstStrategy, period=range(12, 20), rsi_low=range(10, 50), rsi_high=range(40, 90))
+            cerebro.optstrategy(firstStrategy, period=range(11, 20), rsi_low=range(10, 50), rsi_high=range(55, 85))
+            #cerebro.optstrategy(firstStrategy, period=range(12, 13), rsi_low=range(41, 42), rsi_high=range(47, 48)) - BAD
         else:
             #ADD STRATEGY
             cerebro.addstrategy(firstStrategy)
