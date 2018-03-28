@@ -91,7 +91,7 @@ class firstStrategy(bt.Strategy):
 
     def __init__(self):
         self.startcash = self.broker.getvalue()
-        self.rsi = bt.indicators.RSI_SMA(self.data.close, period=self.params.period)
+        self.rsi = bt.indicators.RSI_SMA(self.data.close, period=self.params.period, safediv=True)
         last_rsi_high = 10
 
     #TRADE LOGGING FUNCTION
@@ -180,8 +180,8 @@ if __name__ == '__main__':
 
         if opt_mode:
             # ADD STRATEGY OPTIMISATION
-            cerebro.optstrategy(firstStrategy, period=range(11, 20), rsi_low=range(10, 50), rsi_high=range(55, 85))
-            #cerebro.optstrategy(firstStrategy, period=range(12, 13), rsi_low=range(41, 42), rsi_high=range(47, 48)) - BAD
+            cerebro.optstrategy(firstStrategy, period=range(11, 20), rsi_low=range(10, 50), rsi_high=range(51, 85))
+            #cerebro.optstrategy(firstStrategy, period=range(12, 13), rsi_low=range(41, 42), rsi_high=range(47, 48))
         else:
             #ADD STRATEGY
             cerebro.addstrategy(firstStrategy)
