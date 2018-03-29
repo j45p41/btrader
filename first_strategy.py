@@ -9,9 +9,30 @@ import csv
 import io
 import pandas as pd
 from collections import OrderedDict
+from multiprocessing import Pool, cpu_count
+import math
+import os
+
 
 # DECLARE MODE FOR PROGRAM - OPTOMISATION OR STRATEGY
 opt_mode = True
+DEBUG = False
+period=0
+rsi_low=0
+last_rsi_high=0
+
+# LOG OUTPUT TO FILE
+class Logger(object):
+    def __init__(self, filename="Default.log"):
+        self.terminal = sys.stdout
+        self.log = open(filename, "a")
+
+    def write(self, message):
+        self.terminal.write(message)
+        self.log.write(message)
+
+    def flush(self):
+        pass
 
 # CSV INPUT FILE FORMAT CONFIGURATION
 class dataFeed(btfeed.GenericCSVData):
@@ -70,7 +91,8 @@ class firstStrategy(bt.Strategy):
 
     def __init__(self):
         self.startcash = self.broker.getvalue()
-        self.rsi = bt.indicators.RSI_SMA(self.data.close, period=self.params.period)
+        self.rsi = bt.indicators.RSI_SMA(self.data.close, period=self.params.period, safediv=True)
+        last_rsi_high = 10
 
     #TRADE LOGGING FUNCTION
     def notify_trade(self, trade):
@@ -79,6 +101,7 @@ class firstStrategy(bt.Strategy):
 
         self.log('TRADE INFO, PRICE  %.2f, GROSS %.2f, NET %.2f' %
                  (trade.price, trade.pnl, trade.pnlcomm))
+
     def next(self):
         if not self.position:
             if self.rsi < self.params.rsi_low:
@@ -86,6 +109,8 @@ class firstStrategy(bt.Strategy):
         else:
             if self.rsi > self.params.rsi_high:
                 self.sell(size=10)
+        if opt_mode and DEBUG:
+            print('period: {}, rsi low: {}, rsi high {}'.format(self.params.period,self.params.rsi_low,self.params.rsi_high))
 
 if opt_mode == False:
     def printTradeAnalysis(analyzer):
@@ -125,11 +150,22 @@ if opt_mode == False:
 # INPUT CONDITIONS TO FEED INTO CEREBRO IS ADDED HERE
 if __name__ == '__main__':
 
-    periods = pd.DataFrame(columns=['FROM','TO'],index=[1,2,3])
+    sys.stdout = Logger("firststrategy.log")
+
+
+    periods = pd.DataFrame(columns=['FROM','TO'],index=[1,2,3,4,5,6,7,8,9,10,11,12])
     periods.loc[1] = ('2017-01-01','2017-02-01')
     periods.loc[2] = ('2017-02-01','2017-03-01')
     periods.loc[3] = ('2017-03-01','2017-04-01')
-
+    periods.loc[4] = ('2017-04-01','2017-05-01')
+    periods.loc[5] = ('2017-05-01','2017-06-01')
+    periods.loc[6] = ('2017-06-01','2017-07-01')
+    periods.loc[7] = ('2017-07-01','2017-08-01')
+    periods.loc[8] = ('2017-08-01','2017-09-01')
+    periods.loc[9] = ('2017-09-01','2017-10-01')
+    periods.loc[10] = ('2017-10-01','2017-11-01')
+    periods.loc[11] = ('2017-11-01','2017-12-01')
+    periods.loc[12] = ('2017-12-01','2017-12-31')
 
     for index, row in periods.iterrows():
 
@@ -144,7 +180,8 @@ if __name__ == '__main__':
 
         if opt_mode:
             # ADD STRATEGY OPTIMISATION
-            cerebro.optstrategy(firstStrategy, period=range(11, 20), rsi_low=range(10, 50), rsi_high=range(50, 90))
+            cerebro.optstrategy(firstStrategy, period=range(11, 20), rsi_low=range(10, 50), rsi_high=range(51, 85))
+            #cerebro.optstrategy(firstStrategy, period=range(12, 13), rsi_low=range(41, 42), rsi_high=range(47, 48))
         else:
             #ADD STRATEGY
             cerebro.addstrategy(firstStrategy)
@@ -161,8 +198,6 @@ if __name__ == '__main__':
         #(1440 minutes in one day * 7 days) / 15 minutes = 576 candles
 
         num_of_candles = 672
-
-
 
         def to_unix_time(timestamp):
             epoch = datetime.datetime.utcfromtimestamp(0)  # start of epoch time
@@ -253,30 +288,12 @@ if __name__ == '__main__':
             print('Results: Ordered by Profit:')
             for result in by_PnL:
                 if result_number < 3:
-                    print('Period: {}, rsi_low: {}, rsi_high: {}, PnL: {}'.format(result[0], result[1], result[2], result[3]))
+                    print('Asset: {} Start: {}, End: {}, Period: {}, rsi_low: {}, rsi_high: {}, PnL: {}'.format(filename, periods['FROM'][index], periods['TO'][index], result[0], result[1], result[2], result[3]))
                     result_number = result_number + 1
 
         # Timing the operation
         time_at_end = time.time()
         time_elapsed = round(time_at_end - time_at_start,2)
-
-        #for trade in list(firstStrat._trades.values())[0][0]:
-        #    print (trade)
-
-       #with open(out_filename,'w') as f1:
-    #        #writer=csv.writer(f1)
-    #    for trade_val in list(firstStrat._trades.values())[0][0]:
-    #        line = str(trade_val)
-    #        line2 = line.replace("\n", ",")
-    #        line2 = line2.replace("\r", "x")
-
-    #        data_out = pd.read_csv(io.StringIO(line2),delimiter=':',sep='/n', index_col=0)
-    #        data_out.dropna(axis=1)
-    #        data_out.drop_duplicates()
-    #        data_out.drop(data_out.columns[1-10], axis=1)
-    #        print(data_out)
-
-            #writer.writerow([line2])
 
 
         print('Time elapsed: {} seconds'.format(time_elapsed))
