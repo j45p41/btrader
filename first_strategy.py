@@ -14,6 +14,7 @@ import math
 import os
 
 
+
 # DECLARE MODE FOR PROGRAM - OPTOMISATION OR STRATEGY
 opt_mode = True
 DEBUG = False
@@ -76,10 +77,12 @@ class OrderObserver(bt.observer.Observer):
 
 # MAIN STRATEGY DEFINITION - DEFINE VALUES HERE FOR NON-OPTOMISATION MODE
 class firstStrategy(bt.Strategy):
+    global i
+    i = 1
     params = (
-        ("period", 11),
-        ("rsi_low", 45),
-        ("rsi_high", 63),
+        ("period", 12),
+        ("rsi_low", 49),
+        ("rsi_high", 42),
     )
 
     #TRADE LOGGING FUNCTION
@@ -92,7 +95,7 @@ class firstStrategy(bt.Strategy):
     def __init__(self):
         self.startcash = self.broker.getvalue()
         self.rsi = bt.indicators.RSI_SMA(self.data.close, period=self.params.period, safediv=True)
-        last_rsi_high = 10
+
 
     #TRADE LOGGING FUNCTION
     def notify_trade(self, trade):
@@ -103,6 +106,11 @@ class firstStrategy(bt.Strategy):
                  (trade.price, trade.pnl, trade.pnlcomm))
 
     def next(self):
+        global i
+        i = i + 1
+        if i % 10000 == 0:
+            sys.stdout.write('.')
+            sys.stdout.flush()
         if not self.position:
             if self.rsi < self.params.rsi_low:
                 self.buy(size=10)
@@ -149,7 +157,6 @@ if opt_mode == False:
 
 # INPUT CONDITIONS TO FEED INTO CEREBRO IS ADDED HERE
 if __name__ == '__main__':
-
     sys.stdout = Logger("firststrategy.log")
 
 
@@ -263,9 +270,10 @@ if __name__ == '__main__':
         time_elapsed = round(time_at_end - time_at_start,2)
         print('Time elapsed: {} seconds'.format(time_elapsed))
         print ('Running Cerebro')
-        opt_runs = cerebro.run(tradehistory=False)
-        firstStrat = opt_runs[0]
+        if not opt_mode: opt_runs = cerebro.run(tradehistory=False)
+        else: opt_runs = cerebro.run(tradehistory=False, runonce = False, Exactbars=True)
 
+        firstStrat = opt_runs[0]
 
         if opt_mode:
             # CREATE A LIST VARIABLE THAT CONTAINS RESULTS
@@ -307,4 +315,4 @@ if __name__ == '__main__':
 
             #Print out the final result
             print('Final Portfolio Value: ${}'.format(portvalue))
-            #cerebro.plot(style='candlestick')
+            cerebro.plot(style='candlestick')
